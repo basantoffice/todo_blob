@@ -1,20 +1,45 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Table } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
-import array from "./array";
+import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
+import { saveDataToDatabase } from "./blobController";
+
+const baseURL = 'http://127.0.0.1:10000/devstoreaccount1/todoblob/documect.json?sv=2018-03-28&st=2022-07-21T05%3A47%3A21Z&se=2022-07-22T05%3A47%3A21Z&sr=b&sp=r&sig=%2F9F%2FB%2F8qbIA%2B3rZN%2B1eouCUgU5aM05Cas7n8oZ3yep8%3D';
 
 function Home() {
+
+  const [array, setarray] = useState(null);
+  const getAnswer = async () => {
+    const { data } = await axios(baseURL);
+    let result = [];
+    for(let item in data){
+      let id = item
+      let desc = data[item].description
+      result.push({
+        'id':id,
+        'description':desc
+      });
+    }
+    setarray(result);
+  };
+  useEffect(  () => {
+    getAnswer();
+  }, []);
+
   let history = useNavigate();
+
+  if (!array) return null;
+
+  
+ 
 
   // You may skip this part if you're
   // using react-context api or redux
-  function setID(id, title, description) {
+  function setID(id, description) {
     localStorage.setItem("id", id);
-    localStorage.setItem("title", title);
     localStorage.setItem("description", description);
   }
-
   // Deleted function - functionality
   // for deleting the entry
   function deleted(id) {
@@ -27,6 +52,9 @@ function Home() {
     // deleting the entry with index
     array.splice(index, 1);
 
+    // save the data on the database
+    saveDataToDatabase(array)
+
     // We need to re-render the page for getting
     // the results so redirect to same page.
     history("/");
@@ -37,7 +65,6 @@ function Home() {
       <Table striped bordered hover size="sm">
         <thead>
           <tr>
-            <th>title</th>
             <th>description</th>
           </tr>
         </thead>
@@ -46,8 +73,8 @@ function Home() {
 	and showing the data in the form of table */}
           {array.map((item) => {
             return (
+
               <tr key={item.id}>
-                <td>{item.title}</td>
                 <td>{item.description}</td>
 
                 {/* getting theid,name, and description for storing these
@@ -55,8 +82,11 @@ function Home() {
                 <td>
                   <Link to={`/edit`}>
                     <Button
-                      onClick={(e) =>
-                        setID(item.id, item.title, item.description)
+                      onClick={(e) =>{
+                        setID(item.id, item.description)
+            
+                      }
+                        
                       }
                       variant="info"
                     >

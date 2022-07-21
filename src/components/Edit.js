@@ -1,19 +1,46 @@
 import React, { useEffect, useState } from "react";
 import { Button, Form } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
-import array from "./array";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import {saveDataToDatabase} from './blobController';
+
+import axios from "axios";
+const baseURL = 'http://127.0.0.1:10000/devstoreaccount1/todoblob/documect.json?sv=2018-03-28&st=2022-07-21T05%3A47%3A21Z&se=2022-07-22T05%3A47%3A21Z&sr=b&sp=r&sig=%2F9F%2FB%2F8qbIA%2B3rZN%2B1eouCUgU5aM05Cas7n8oZ3yep8%3D';
 
 function Edit() {
   // Here usestate has been used in order
   // to set and get values from the jsx
-  const [title, settitle] = useState("");
+  const [array, setarray] = useState(null);
   const [description, setdescription] = useState("");
   const [id, setid] = useState("");
+  const getAnswer = async () => {
+    const { data } = await axios(baseURL);
+    let result = [];
+    for(let item in data){
+      let id = item
+      let desc = data[item].description
+      result.push({
+        'id':id,
+        'description':desc
+      });
+    }
+    setarray(result);
+  };
+  useEffect(  () => {
+    getAnswer();
+  }, []);
+
+  // Useeffect take care that page will be rendered only once
+  useEffect(() => {
+    setdescription(localStorage.getItem("description"));
+    setid(localStorage.getItem("id"));
+  }, []);
+
 
   // used for navigation with logic in javascript
   let history = useNavigate();
+  if (!array) return null;
 
   // getting an index of an entry with an id
   var index = array
@@ -21,6 +48,7 @@ function Edit() {
       return e.id;
     })
     .indexOf(id);
+
 
   // function for handling the edit and
   // pushing changes of editing/updating
@@ -31,35 +59,22 @@ function Edit() {
 
     // putting the value from the input textfield and
     // replacing it from existing for updation
-    a.title = title;
     a.description = description;
+
+    // save the data to the database
+    saveDataToDatabase(array);
 
     // redirecting to main page
     history("/");
   };
 
-  // Useeffect take care that page will be rendered only once
-  useEffect(() => {
-    settitle(localStorage.getItem("title"));
-    setdescription(localStorage.getItem("description"));
-    setid(localStorage.getItem("id"));
-  }, []);
 
   return (
     <div>
       <Form className="d-grid gap-2" style={{ margin: "15rem" }}>
-        {/* setting a name from the input textfiled */}
-        <Form.Group className="mb-3" controlId="formBasicEmail">
-          <Form.Control
-            value={title}
-            onChange={(e) => settitle(e.target.value)}
-            type="text"
-            placeholder="Enter title"
-          />
-        </Form.Group>
-
+     
         {/* setting a description from the input textfiled */}
-        <Form.Group className="mb-3" controlId="formBasicPassword">
+        <Form.Group className="mb-3 h-100" controlId="formBasicPassword">
           <Form.Control
             value={description}
             onChange={(e) => setdescription(e.target.value)}
